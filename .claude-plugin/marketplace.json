@@ -1,0 +1,16 @@
+{
+  "name": "intempus-brain-shared",
+  "owner": {
+    "name": "david-lintern"
+  },
+  "metadata": {
+    "description": "Shared Intempus brain skills usable by all agents — plan implementation, brain tooling, and utilities."
+  },
+  "plugins": [
+    {
+      "name": "brain-shared-skills",
+      "source": "./",
+      "description": "Shared Intempus brain skills: plan implementation, brain tooling, and agent utilities."
+    }
+  ]
+}

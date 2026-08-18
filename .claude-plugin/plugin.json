@@ -1,0 +1,9 @@
+{
+  "name": "brain-shared-skills",
+  "description": "Shared Intempus brain skills: plan implementation, brain tooling, and agent utilities shared across all Intempus agent repos.",
+  "version": "0.2.0",
+  "author": {
+    "name": "david-lintern"
+  },
+  "repository": "https://github.com/david-lintern/intempus-brain-shared"
+}
