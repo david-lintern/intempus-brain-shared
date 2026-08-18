@@ -65,25 +65,57 @@ Do not write steps that say "edit the file" without knowing which file and which
 
 ## Step 5 — Determine test commands
 
-Based on the repo(s) involved, determine the exact local test commands:
+**The goal is to verify the changed behaviour actually works, not just that the code compiles or imports.**
 
-| Repo / Stack | Test command |
+### 5a — Check what test infrastructure exists
+
+Before writing test commands, inspect the repo:
+
+```bash
+# Check for docker-compose files
+ls docker-compose*.yml docker-compose*.yaml 2>/dev/null
+
+# Check for Makefile targets
+grep -E "^(test|lint|check|ci):" Makefile 2>/dev/null | head -10
+
+# Check for pytest / unittest
+ls tests/ test/ pytest.ini setup.cfg pyproject.toml 2>/dev/null | head -5
+```
+
+### 5b — Select the right test level
+
+Use the **highest-fidelity test available** that covers the changed code path:
+
+| Priority | Use when | Command pattern |
+|---|---|---|
+| 1. Existing test suite | Repo has `pytest`, `unittest`, or `make test` | Run the relevant test module or file |
+| 2. Docker Compose + curl | Repo has `docker-compose.yml` and exposes HTTP endpoints | Start, hit the changed endpoint, stop |
+| 3. Django test runner | Django app with no docker-compose | `python manage.py test <app>` for the affected app |
+| 4. Build verification | TypeScript/frontend, no test suite | `npm run build` then check no type errors |
+| 5. Manual run + observation | Fabric/Ansible, no automated test | Describe the exact manual verification steps |
+
+**Never use `python -c "import X; print('OK')"` as the sole test.** An import check proves nothing about functionality.
+
+### 5c — Per-repo guidance
+
+| Repo | Preferred test |
 |---|---|
-| `intempus-brain` (server.py) | `cd /home/david/Intempus/Projects/intempus-brain && python -c "import server; print('OK')"` |
-| `intempus-brain` (brain_admin Django) | `cd /home/david/Intempus/Projects/intempus-brain/brain_admin && python manage.py check` |
+| `intempus-brain` (server.py) | `cd /home/david/Intempus/Projects/intempus-brain && docker compose up -d && sleep 5 && curl -sf http://localhost:8000/health \| python -m json.tool && docker compose down` — replace the endpoint with the one being changed |
+| `intempus-brain` (brain_admin Django) | `cd /home/david/Intempus/Projects/intempus-brain/brain_admin && python manage.py check && python manage.py test <app_name>` |
 | `intempus-brain` (brain_admin frontend) | `cd /home/david/Intempus/Projects/intempus-brain/brain_admin/frontend && npm run build` |
-| `django` | `cd /home/david/Intempus/Projects/django && python manage.py check` |
-| `data-platform` | `cd /home/david/Intempus/Projects/data-platform && make lint` (runs inside Docker) |
-| `operations` (Fabric) | Review changed tasks — no dry-run available; describe what to verify manually |
-| `zones` | `cd /home/david/Intempus/Projects/zones && ./push.sh --dry-run` (if available) |
+| `django` | `cd /home/david/Intempus/Projects/django && python manage.py check && python manage.py test <app_label> --keepdb` — use the app containing the changed code |
+| `data-platform` | `cd /home/david/Intempus/Projects/data-platform && make test` (runs inside Docker) — if no make test, `make lint` then describe the Dagster asset to materialize manually |
+| `operations` (Fabric) | No automated test — write exact manual steps: which Fabric task, which environment flag, what output confirms success |
+| `zones` | `cd /home/david/Intempus/Projects/zones && ./push.sh --dry-run` if available; otherwise list the changed zone file and the record to verify with `dig` |
 
-If the repo is not listed, use the minimum from CLAUDE.md:
-- Django → `python manage.py check`
-- TypeScript/Next.js → `npm run build`
-- Python module → `python -c "import <module>; print('OK')"`
-- Docker service → start locally + `curl` one endpoint
+### 5d — Write the test commands
 
-Write the exact commands as a multi-line string. This becomes `local_test_notes`.
+Write the **exact commands** a human or agent would run after making the changes. Be specific:
+- Name the endpoint being hit (not just `/health`)
+- Name the Django app or test module (not just `manage.py test`)
+- Include the `curl` response to look for (e.g. `"status": "ok"`)
+
+This becomes `local_test_notes`.
 
 ---
 
