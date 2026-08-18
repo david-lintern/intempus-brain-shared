@@ -110,6 +110,38 @@ If `Local test:` is blank or `—`, use the stack minimum:
 
 ---
 
+## Step 6.5 — Commit and push changes
+
+Before deploying, ensure all code changes are committed and pushed to the remote. This prevents the issue where local file changes aren't included in the deployed code.
+
+### 6.5a — Check for uncommitted changes
+```bash
+git status
+```
+
+### 6.5b — If there are code changes (modified or new files from steps 1-5)
+Commit them with a message referencing the plan:
+```bash
+git add <modified-files>
+git commit -m "Implement <plan-id>: <plan-title>"
+```
+
+Use the plan ID and title from the plan_get output. Example:
+```bash
+git commit -m "Implement brain-ideas-collection: Add ideas collection to brain"
+```
+
+### 6.5c — Push to remote
+```bash
+git push origin <current-branch>
+```
+
+**Important:** If the current branch is `main`, `master`, or `develop` — **STOP and ask the user** before pushing. These branches are protected and require a PR workflow (per CLAUDE.md).
+
+If on a feature branch, push normally. If there are no changes to commit, skip this section and proceed to Step 7.
+
+---
+
 ## Step 7 — Deploy
 
 Find the `Deploy:` section in the plan_get output. Run every command listed **exactly as written**, in order.
@@ -140,8 +172,10 @@ After deploying, run any verification checks from the plan's final step. Then re
 ## Rules (never break these)
 
 - **Test before deploy.** Always. No exceptions.
+- **Commit and push before deploy.** Code changes must be committed and pushed to the remote before the deploy step runs. This prevents the issue where local changes are made but not included in the deployment.
 - **Check approval before any step.** Even if the user says "just do it."
 - **Use the plan's commands.** `local_test_notes` and `deploy_notes` are the source of truth. If missing, ask.
 - **Update step status as you go.** `in_progress` before starting, `done` right after finishing. Never batch.
 - **Never amend a previous commit.** Fix the issue and create a new commit.
 - **One step at a time.** Finish and mark done before starting the next.
+- **Never push to protected branches without asking.** If the current branch is `main`, `master`, or `develop`, ask the user before pushing.
